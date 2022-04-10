@@ -1,0 +1,10 @@
+intervals:
+  - monthly
+services:
+  - name: a_service
+    interval: monthly
+customers:
+  - name: John
+    service: a_service
+    start: 1-01-2022
+    end: ~
