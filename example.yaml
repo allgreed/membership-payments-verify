@@ -1,10 +1,16 @@
 intervals:
   - monthly
 services:
-  - name: a_service
+  a_service:
+    interval: monthly
+  b_service:
     interval: monthly
 customers:
   - name: John
     service: a_service
     start: 1-01-2022
+    end: ~
+  - name: Jane
+    service: b_service
+    start: 2-03-2022
     end: ~
