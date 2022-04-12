@@ -1,6 +1,19 @@
 # membership-payments-verify
 Plaintext accounting compatible tool for managing a small number of customers that you render service to on a recurring basis. They either pay their dues or are due for a swim. With the fishes.
 
+## Grammar
+
+```
+trn = Payment for $service [$customer] $period
+period = for current month | until $date
+date = dd/mm/yyyy
+```
+
+Example:
+```
+Payment for a_service [John] for current month
+```
+
 ## Usage
 For now go for [dev](#dev)
 

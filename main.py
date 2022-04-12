@@ -1,4 +1,5 @@
 import yaml
+import re
 import calendar
 from dataclasses import dataclass
 from typing import Callable, List, Tuple
@@ -7,7 +8,7 @@ from datetime import date, datetime
 import plaintext_accounting_parser
 
 
-# TODO: come up with a better name than Ble
+# TODO: come up with a better name than Ble, Fuj, Zog
 @dataclass
 class Ble:
     customer: str
@@ -15,9 +16,18 @@ class Ble:
     end: date
     service: str
 
+# like payment_obligation?
+class Fuj(Ble):
+    pass
+
+
+# like payment_fullfilment?
+class Zog(Ble):
+    pass
+
 
 def main():
-    with open("example.yaml") as f:
+    with open("example.yaml", "r") as f:
         config = yaml.load(f.read(), Loader=yaml.SafeLoader) 
 
     # TODO: check if intervals are implemented
@@ -34,22 +44,51 @@ def main():
 
     entries = generate_entries(config, now_fn=now)
 
+    with open("/home/allgreed/Documents/finance/2022.journal", "r") as f:
+        transactions = plaintext_accounting_parser.parse_many(f.read())
+    
+    customer_transactions = filter(lambda t: t.title.startswith("Payment for"), transactions)
+    bles = map(parse_customer_transaction, customer_transactions)
+
     from pprint import pprint
     pprint(entries)
+    pprint(list(bles))
     # !!! TODO !!! <- implement this for MVP
-    # read transactions
-    # parse transations
     # parametrize where config file is acquired from
+    # write a proper config
     # parametrize where transaction file is acquired from
 
-    # match payments with Bles
+    # match Zogs with Fujs
     # find unmatches == overdue
     # display
 
+    # TODO: add a period to pay backwards
     # TODO: add and verify price
 
 
-def generate_entries(config: dict, now_fn: Callable[[], date]) -> List[Ble]:
+def parse_customer_transaction(t: plaintext_accounting_parser.Transaction) -> Zog:
+    m = re.match(r"Payment for (\w+) \[(.\w+\s?\w*)\] (.*)", t.title)
+    service, customer, period = m.groups()
+
+    start = t.date
+
+    if period == "for current month":
+        start = date(year=t.date.year, month=t.date.month, day=1)
+        end = date(year=t.date.year, month=t.date.month, day=calendar.monthrange(t.date.year, t.date.month)[1])
+    elif period.startswith("until"):
+        _, d = period.split(" ")
+        try:
+            end = datetime.strptime(d, "%d/%m/%Y").date()
+        except ValueError:
+            print(d)
+            raise
+    else:
+        raise NotImplementedError(f"period \"{period}\" not supported")
+
+    return Zog(service=service, customer=customer, start=start, end=end)
+
+
+def generate_entries(config: dict, now_fn: Callable[[], date]) -> List[Fuj]:
     now = now_fn()
 
     result = []
@@ -60,7 +99,7 @@ def generate_entries(config: dict, now_fn: Callable[[], date]) -> List[Ble]:
         interval = config["services"][service]["interval"]
 
         for start_end in compute_wall_intervals(start, end, interval, now):
-            result.append(Ble(customer=name, service=service, start=start_end[0], end=start_end[1]))
+            result.append(Fuj(customer=name, service=service, start=start_end[0], end=start_end[1]))
 
     return result
 
