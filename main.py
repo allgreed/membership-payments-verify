@@ -9,22 +9,19 @@ from datetime import date, datetime
 import plaintext_accounting_parser
 
 
-# TODO: come up with a better name than Ble, Fuj, Zog
 @dataclass
-class Ble:
+class Obligation:
     customer: str
     start: date
     end: date
     service: str
 
-# like payment_obligation?
-class Fuj(Ble):
-    pass
-
-
-# like payment_fullfilment?
-class Zog(Ble):
-    pass
+@dataclass
+class Payment:
+    customer: str
+    start: date
+    end: date
+    service: str
 
 
 def main():
@@ -43,27 +40,44 @@ def main():
         if s not in map(lambda x: x, config["services"]):
             raise ValueError(f"service \"{s}\" for customer \"{c['name']}\" not supported")
 
-    entries = generate_entries(config, now_fn=now)
+    obligations = generate_obligations(config, now_fn=now)
 
     with open(os.environ["LEDGER_FILE"], "r") as f:
         transactions = plaintext_accounting_parser.parse_many(f.read())
     
     customer_transactions = filter(lambda t: t.title.startswith("Payment for"), transactions)
-    bles = map(parse_customer_transaction, customer_transactions)
+    _payments = map(parse_customer_transaction, customer_transactions)
+    payments = list(_payments)
+
+    for p in payments:
+        r = set()
+        for i, o in enumerate(obligations):
+            if matches(p, o):
+                r.add(i)
+
+        if not r:
+            raise RuntimeError(f"Unmatched payment {p}")
+
+        for i in sorted(r, reverse=True):
+            del obligations[i]
 
     from pprint import pprint
-    pprint(entries)
-    pprint(list(bles))
-    # !!! TODO !!! <- implement this for MVP
-    # match Zogs with Fujs
-    # find unmatches == overdue
-    # display
+    pprint(obligations)
 
     # TODO: add a period to pay backwards
     # TODO: add and verify price
 
 
-def parse_customer_transaction(t: plaintext_accounting_parser.Transaction) -> Zog:
+def matches(p, o) -> bool:
+    if o.customer == p.customer and p.service == o.service:
+        # TODO: assert interval for service is "monthly"
+        result = p.start <= o.start and p.end >= o.end
+        return result
+
+    return False
+
+
+def parse_customer_transaction(t: plaintext_accounting_parser.Transaction) -> Payment:
     m = re.match(r"Payment for (\w+) \[(.\w+\s?\w*)\] (.*)", t.title)
     service, customer, period = m.groups()
 
@@ -83,10 +97,10 @@ def parse_customer_transaction(t: plaintext_accounting_parser.Transaction) -> Zo
     else:
         raise NotImplementedError(f"period \"{period}\" not supported")
 
-    return Zog(service=service, customer=customer, start=start, end=end)
+    return Payment(service=service, customer=customer, start=start, end=end)
 
 
-def generate_entries(config: dict, now_fn: Callable[[], date]) -> List[Fuj]:
+def generate_obligations(config: dict, now_fn: Callable[[], date]) -> List[Obligation]:
     now = now_fn()
 
     result = []
@@ -97,7 +111,7 @@ def generate_entries(config: dict, now_fn: Callable[[], date]) -> List[Fuj]:
         interval = config["services"][service]["interval"]
 
         for start_end in compute_wall_intervals(start, end, interval, now):
-            result.append(Fuj(customer=name, service=service, start=start_end[0], end=start_end[1]))
+            result.append(Obligation(customer=name, service=service, start=start_end[0], end=start_end[1]))
 
     return result
 
