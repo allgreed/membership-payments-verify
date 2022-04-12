@@ -1,4 +1,5 @@
 import yaml
+import os
 import re
 import calendar
 from dataclasses import dataclass
@@ -27,7 +28,7 @@ class Zog(Ble):
 
 
 def main():
-    with open("example.yaml", "r") as f:
+    with open(os.environ.get("APP_MEMBERSHIP_CONFIG", os.path.expanduser("~/Documents/finance/membership.yaml")), "r") as f:
         config = yaml.load(f.read(), Loader=yaml.SafeLoader) 
 
     # TODO: check if intervals are implemented
@@ -44,7 +45,7 @@ def main():
 
     entries = generate_entries(config, now_fn=now)
 
-    with open("/home/allgreed/Documents/finance/2022.journal", "r") as f:
+    with open(os.environ["LEDGER_FILE"], "r") as f:
         transactions = plaintext_accounting_parser.parse_many(f.read())
     
     customer_transactions = filter(lambda t: t.title.startswith("Payment for"), transactions)
@@ -54,10 +55,6 @@ def main():
     pprint(entries)
     pprint(list(bles))
     # !!! TODO !!! <- implement this for MVP
-    # parametrize where config file is acquired from
-    # write a proper config
-    # parametrize where transaction file is acquired from
-
     # match Zogs with Fujs
     # find unmatches == overdue
     # display
@@ -77,6 +74,7 @@ def parse_customer_transaction(t: plaintext_accounting_parser.Transaction) -> Zo
         end = date(year=t.date.year, month=t.date.month, day=calendar.monthrange(t.date.year, t.date.month)[1])
     elif period.startswith("until"):
         _, d = period.split(" ")
+
         try:
             end = datetime.strptime(d, "%d/%m/%Y").date()
         except ValueError:
