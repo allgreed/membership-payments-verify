@@ -61,8 +61,12 @@ def main():
         for i in sorted(r, reverse=True):
             del obligations[i]
 
-    from pprint import pprint
-    pprint(obligations)
+    if not obligations:
+        print("All paid for!")
+    else:
+        print("Unpaid obligations:")
+        for o in obligations:
+            print(o)
 
     # TODO: add a period to pay backwards
     # TODO: add and verify price
@@ -81,10 +85,10 @@ def parse_customer_transaction(t: plaintext_accounting_parser.Transaction) -> Pa
     m = re.match(r"Payment for (\w+) \[(.\w+\s?\w*)\] (.*)", t.title)
     service, customer, period = m.groups()
 
-    start = t.date
+    # TODO: assert interval for service is "monthly"
+    start = date(year=t.date.year, month=t.date.month, day=1)
 
     if period == "for current month":
-        start = date(year=t.date.year, month=t.date.month, day=1)
         end = date(year=t.date.year, month=t.date.month, day=calendar.monthrange(t.date.year, t.date.month)[1])
     elif period.startswith("until"):
         _, d = period.split(" ")
