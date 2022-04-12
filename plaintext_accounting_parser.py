@@ -14,7 +14,7 @@ def parse(raw_transaction: str) -> Transaction:
     # because title may contain spaces
     raw_date, *_title = first.split(" ")
     title = " ".join(_title)
-    _date = datetime.strptime(raw_date, "%Y-%M-%d").date()
+    _date = datetime.strptime(raw_date, "%Y-%m-%d").date()
     return Transaction(title=title, date=_date)
 
 

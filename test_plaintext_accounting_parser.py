@@ -4,11 +4,11 @@ from plaintext_accounting_parser import Transaction
 
 
 def test_parse_single():
-    single_transaction = """1987-01-06 food
+    single_transaction = """1987-05-06 food
     ble       13.00 XYZ
     fuj      -13.00 XYZ"""
 
-    assert plaintext_accounting_parser.parse(single_transaction) == plaintext_accounting_parser.Transaction(title="food", date=date(year=1987, month=1, day=6))
+    assert plaintext_accounting_parser.parse(single_transaction) == plaintext_accounting_parser.Transaction(title="food", date=date(year=1987, month=5, day=6))
 
 
 def test_parse_many():
