@@ -110,8 +110,8 @@ def generate_obligations(config: dict, now_fn: Callable[[], date]) -> List[Oblig
     result = []
     for c in config["customers"]:
         name, service, _start, _end = c["name"], c["service"], c["start"], c["end"]
-        start = datetime.strptime(_start, "%d-%M-%Y").date()
-        end = datetime.strptime(_end, "%d-%M-%Y").date() if _end is not None else None
+        start = datetime.strptime(_start, "%d-%m-%Y").date()
+        end = datetime.strptime(_end, "%d-%m-%Y").date() if _end is not None else None
         interval = config["services"][service]["interval"]
 
         for start_end in compute_wall_intervals(start, end, interval, now):
